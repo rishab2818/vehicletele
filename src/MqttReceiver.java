@@ -8,8 +8,9 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.json.JSONObject;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+//import java.util.concurrent.ExecutorService;
+//import java.util.concurrent.Executors;
+
 public class MqttReceiver {
 
     private static final Logger logger = LoggerFactory.getLogger(MqttReceiver.class);
@@ -17,59 +18,87 @@ public class MqttReceiver {
     private static final String AES_ALGORITHM = "AES";
     private static final String CIPHER_ALGORITHM = "AES/CBC/PKCS5Padding";
 
-   public void start() {
-    String broker = "tcp://127.0.0.1:1883";
-    String topic = "transport/data";
-    String clientId = "JavaSubscriber";
+    public void start() {
+        String broker = "tcp://127.0.0.1:1883";
+        String topic = "transport/data";
+        String clientId = "JavaSubscriber";
 
-    String kafkaBootstrapServers = "localhost:9092";
-    Properties kafkaProps = KafkaSender.getKafkaProperties(kafkaBootstrapServers);
-    KafkaProducer<String, String> producer = new KafkaProducer<>(kafkaProps);
+        String kafkaBootstrapServers = "localhost:9092";
+        Properties kafkaProps = KafkaSender.getKafkaProperties(kafkaBootstrapServers);
+        KafkaProducer<String, String> producer = new KafkaProducer<>(kafkaProps);
 
-    ExecutorService executor = Executors.newFixedThreadPool(2); // Creating a thread pool with 2 threads
+        // ExecutorService executor = Executors.newFixedThreadPool(2); // Creating a
+        // thread pool with 2 threads
 
-    try {
-        MqttClient client = new MqttClient(broker, clientId);
-        client.setCallback(new MqttCallback() {
-            @Override
-            public void connectionLost(Throwable cause) {
-                logger.error("Connection lost!", cause);
-            }
+        try {
+            MqttClient client = new MqttClient(broker, clientId);
+            client.setCallback(new MqttCallback() {
+                @Override
+                public void connectionLost(Throwable cause) {
+                    logger.error("Connection lost!", cause);
+                }
 
-            @Override
-            public void messageArrived(String topic, MqttMessage message) {
-                executor.submit(() -> handleMessage(message, producer, topic)); // Submitting task to the thread pool
-            }
+                @Override
+                public void messageArrived(String topic, MqttMessage message) {
+                    handleMessage(message, producer, topic); // Submitting task to the thread
+                                                             // pool
+                }
 
-            @Override
-            public void deliveryComplete(IMqttDeliveryToken token) {
-                // Not used in this example
-            }
-        });
+                @Override
+                public void deliveryComplete(IMqttDeliveryToken token) {
+                    // Not used in this example
+                }
+            });
 
-        client.connect();
-        client.subscribe(topic);
-    } catch (MqttException e) {
-        logger.error("Error connecting to MQTT broker", e);
-    } finally {
-        producer.close();
-        executor.shutdown(); // Shutting down the executor
+            client.connect();
+            client.subscribe(topic);
+        } catch (MqttException e) {
+            logger.error("Error connecting to MQTT broker", e);
+            producer.close();
+
+        } finally {
+            logger.error("Thota");
+            // executor.shutdown(); // Shutting down the executor
+        }
     }
-}
 
     private void handleMessage(MqttMessage message, KafkaProducer<String, String> producer, String topic) {
         byte[] encryptedData = message.getPayload();
         String decryptedData = decryptData(encryptedData, "Sixteen byte key");
         if (decryptedData != null) {
             logger.info("Decrypted data: {}", decryptedData);
-            String jsonObject = parseDecryptedData(decryptedData);
-            if (jsonObject != null) {
-                logger.info("Parsed JSON data: {}", jsonObject);
-                KafkaSender.sendToKafka(topic, jsonObject, producer);
+            String jsonObjectString = parseDecryptedData(decryptedData);
+            if (jsonObjectString != null) {
+                logger.info("Parsed JSON data: {}", jsonObjectString);
+                JSONObject jsonObject = new JSONObject(jsonObjectString);
+                String packetType = jsonObject.optString("PacketType");
+                logger.info("PacketType: {}", packetType);
+                sendToCorrectKafkaTopic(packetType, jsonObjectString, producer);
+                // KafkaSender.sendToKafka("xyz", jsonObjectString, producer);
             } else {
                 logger.warn("Parsed JSON object is null.");
             }
         }
+    }
+
+    private void sendToCorrectKafkaTopic(String packetType, String jsonObjectString,
+            KafkaProducer<String, String> producer) {
+        String kafkaTopic;
+        switch (packetType) {
+            case "nr":
+                kafkaTopic = "xyz"; // Kafka topic for nr packets
+                break;
+            case "obd":
+                kafkaTopic = "xyz"; // Kafka topic for obd packets
+                break;
+            case "dtc":
+                kafkaTopic = "xyz"; // Kafka topic for dtc packets
+                break;
+            default:
+                kafkaTopic = "xyz"; // Default Kafka topic if packetType is not recognized
+        }
+        // Send data to the determined Kafka topic
+        KafkaSender.sendToKafka(kafkaTopic, jsonObjectString, producer);
     }
 
     private String decryptData(byte[] encryptedData, String key) {

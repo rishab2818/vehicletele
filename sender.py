@@ -67,13 +67,15 @@ def calculate_checksum(header):
     return checksum
 # Generate ECU data packet
 def generate_data_packet(imei, latitude, longitude, current_time=datetime.now(), frame_number='0000000'):
+    packet_types = ['NR', 'OBD', 'DTC']
+    packet_status_types = ['L','H']
     start_char = '$'
     header = 'Header'
     firmware_version = '1.0'
     config_version = '3.5'
-    packet_type = 'NR'
-    packet_status = 'L'
-    gps_fix = '1'
+    packet_type = random.choice(packet_types)
+    packet_status = random.choice(packet_status_types)
+    gps_fix = '1' if random.choice([True, False]) else '0'
     date = datetime.now().strftime('%d%m%Y')
     time = current_time.strftime('%H%M%S')
     time += (current_time + timedelta(seconds=10)).strftime('%S')

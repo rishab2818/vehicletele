@@ -1,0 +1,20 @@
+{
+    "java.dependency.syncWithFolderExplorer": false,
+    "java.project.referencedLibraries": {
+        "include": [
+            "lib/**/*.jar",
+            "src\\lib\\slf4j-jdk14-1.7.2.jar",
+            "src\\lib\\json-20240303.jar",
+            "src\\lib\\kafka-clients-3.7.0.jar",
+            "src\\lib\\org.eclipse.paho.client.mqttv3-1.2.5.jar",
+            "src\\lib\\slf4j-api-1.7.2.jar"
+        ],
+        "exclude": [
+            "src/lib/slf4j-jdk14-1.7.2.jar",
+            "src/lib/slf4j-api-1.7.2.jar",
+            "src/lib/org.eclipse.paho.client.mqttv3-1.2.5.jar",
+            "src/lib/kafka-clients-3.7.0.jar",
+            "src/lib/json-20240303.jar"
+        ]
+    }
+}
