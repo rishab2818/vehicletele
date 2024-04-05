@@ -1,11 +1,11 @@
-# command to run java program
+# Command to run Java program
 **To Compile** : make
 
 **To Run** : make run
 
 **To Clean**: make clean
 
-# Commands to run kafka, Zookeper 
+# Commands to run Kafka, Zookeper 
 
 > cd C:\zookeeper
 
